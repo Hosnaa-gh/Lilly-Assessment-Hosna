@@ -14,6 +14,8 @@ frontend work.
 
 ## The tasks
 
+
+
 ### Core task 1 - fetch and display `/medicines`
 Call `GET http://localhost:8000/medicines` from the frontend and display the
 results. The data has problems: some records have a null name, an empty name,
