@@ -30,7 +30,15 @@ const errorEl = document.getElementById("error");
  * Return the medicines array. Surface network/HTTP errors so the caller can show them.
  */
 async function fetchMedicines() {
-    // TODO: fetch(`${BASE_URL}/medicines`), check response.ok, return the data.
+    const response = await fetch(`${BASE_URL}/medicines`);
+
+    if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    return data.medicines;
 }
 
 /**
@@ -39,11 +47,7 @@ async function fetchMedicines() {
  * null price, missing price, non-numeric price. Show something sensible for each.
  * TODO: clear the #error area on success.
  */
-function renderMedicines(data) {
-    // TODO: build a table (the .results styles expect a <table>), iterate the
-    // records, and render each row safely. Use the .invalid class to flag bad
-    // values if you like.
-}
+
 
 /**
  * TODO (Core task 2): fetch from /medicines/unreliable with sensible retries.
@@ -56,9 +60,75 @@ async function fetchUnreliable() {
 }
 
 // ---- Button wiring (already works - no need to change) ----
+function renderMedicines(data) {
+    resultsEl.replaceChildren();
+
+    const table = document.createElement("table");
+
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Medicine Name</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+
+    const tbody = table.querySelector("tbody");
+
+    for (const medicine of data) {
+        const row = document.createElement("tr");
+
+        const nameCell = document.createElement("td");
+        const priceCell = document.createElement("td");
+
+        const validName =
+            typeof medicine.name === "string" &&
+            medicine.name.trim() !== "";
+
+        const validPrice =
+            typeof medicine.price === "number" &&
+            Number.isFinite(medicine.price);
+
+        if (validName) {
+            nameCell.textContent = medicine.name.trim();
+        } else {
+            nameCell.textContent = "Unknown medicine";
+            nameCell.classList.add("invalid");
+        }
+
+        if (validPrice) {
+            priceCell.textContent = medicine.price.toFixed(2);
+        } else {
+            priceCell.textContent = "Price unavailable";
+            priceCell.classList.add("invalid");
+        }
+
+        row.append(nameCell, priceCell);
+        tbody.appendChild(row);
+    }
+
+    resultsEl.appendChild(table);
+
+    errorEl.textContent = "";
+    errorEl.hidden = true;
+}
+
 document.getElementById("load-medicines").addEventListener("click", async () => {
-    // TODO: call fetchMedicines() then renderMedicines(data),
-    // showing #loading and clearing #error appropriately.
+    loadingEl.hidden = false;
+    errorEl.hidden = true;
+    errorEl.textContent = "";
+
+    try {
+        const medicines = await fetchMedicines();
+        renderMedicines(medicines);
+    } catch (error) {
+        errorEl.textContent = `Unable to load medicines: ${error.message}`;
+        errorEl.hidden = false;
+    } finally {
+        loadingEl.hidden = true;
+    }
 });
 
 document.getElementById("load-unreliable").addEventListener("click", async () => {
