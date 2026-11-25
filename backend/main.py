@@ -47,6 +47,24 @@ def get_unreliable_meds(response: Response):
         return {"error": "The medicines service is temporarily unavailable."}
     return {"medicines": _load_medicines()}
 
+@app.get("/medicines/average-price")
+def get_average_price():
+    medicines = _load_medicines()
+    valid_prices = []
+
+    for medicine in medicines:
+        price = medicine.get("price")
+
+        if type(price) in (int, float):
+            valid_prices.append(price)
+
+    if not valid_prices:
+        return {"average_price": None}
+
+    average_price = sum(valid_prices) / len(valid_prices)
+
+    return {"average_price": round(average_price, 2)}
+
 
 @app.get("/medicines/{name}")
 def get_single_med(name: str):
