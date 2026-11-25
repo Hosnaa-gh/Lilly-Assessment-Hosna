@@ -24,11 +24,41 @@ const BASE_URL = "http://localhost:8000";
 const resultsEl = document.getElementById("results");
 const loadingEl = document.getElementById("loading");
 const errorEl = document.getElementById("error");
+const averagePriceEl = document.getElementById("average-price");
 
 /**
  * TODO (Core task 1): fetch the list of medicines from /medicines.
  * Return the medicines array. Surface network/HTTP errors so the caller can show them.
  */
+
+async function fetchAveragePrice() {
+    averagePriceEl.hidden = false;
+
+    try {
+        const response = await fetch(
+            `${BASE_URL}/medicines/average-price`
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP error: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (Number.isFinite(data.average_price)) {
+            averagePriceEl.textContent =
+                `Average medicine price: ${data.average_price.toFixed(2)}`;
+        } else {
+            averagePriceEl.textContent =
+                "Average medicine price: Unavailable";
+        }
+
+    } catch (error) {
+        averagePriceEl.textContent =
+            "Unable to load average medicine price.";
+    }
+}
+
 async function fetchMedicines() {
     const response = await fetch(`${BASE_URL}/medicines`);
 
@@ -77,7 +107,8 @@ async function fetchUnreliable() {
                 const data = await response.json();
 
                 renderMedicines(data.medicines);
-                return;
+await fetchAveragePrice();
+return;
 
             } catch (error) {
                 errorEl.hidden = false;
@@ -167,6 +198,7 @@ document.getElementById("load-medicines").addEventListener("click", async () => 
     try {
         const medicines = await fetchMedicines();
         renderMedicines(medicines);
+        await fetchAveragePrice();
     } catch (error) {
         errorEl.textContent = `Unable to load medicines: ${error.message}`;
         errorEl.hidden = false;
