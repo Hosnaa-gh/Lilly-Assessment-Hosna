@@ -56,7 +56,49 @@ async function fetchMedicines() {
  * render the data and clear #error. Show/hide the #loading area while working.
  */
 async function fetchUnreliable() {
-    // TODO: implement the retry loop here.
+    const maxAttempts = 3;
+    const retryDelay = 1000;
+
+    loadingEl.hidden = false;
+    errorEl.hidden = true;
+    errorEl.textContent = "";
+
+    try {
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                const response = await fetch(
+                    `${BASE_URL}/medicines/unreliable`
+                );
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                renderMedicines(data.medicines);
+                return;
+
+            } catch (error) {
+                errorEl.hidden = false;
+
+                if (attempt === maxAttempts) {
+                    errorEl.textContent =
+                        "Unable to load medicines after 3 attempts. Please try again later.";
+                    return;
+                }
+
+                errorEl.textContent =
+                    `Attempt ${attempt} failed. Retrying in 1 second...`;
+
+                await new Promise(resolve =>
+                    setTimeout(resolve, retryDelay)
+                );
+            }
+        }
+    } finally {
+        loadingEl.hidden = true;
+    }
 }
 
 // ---- Button wiring (already works - no need to change) ----
@@ -116,6 +158,8 @@ function renderMedicines(data) {
 }
 
 document.getElementById("load-medicines").addEventListener("click", async () => {
+    if (!loadingEl.hidden) return;
+
     loadingEl.hidden = false;
     errorEl.hidden = true;
     errorEl.textContent = "";
@@ -132,5 +176,7 @@ document.getElementById("load-medicines").addEventListener("click", async () => 
 });
 
 document.getElementById("load-unreliable").addEventListener("click", async () => {
-    // TODO: call fetchUnreliable().
+    if (!loadingEl.hidden) return;
+
+    await fetchUnreliable();
 });
